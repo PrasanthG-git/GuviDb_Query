@@ -1,0 +1,114 @@
+1. Find All Topics and Tasks Taught in the Month of October:
+
+// Find topics taught in October
+db.topics.find({
+  date: {
+    $gte: new ISODate("2020-10-01T00:00:00Z"),
+    $lt: new ISODate("2020-11-01T00:00:00Z")
+  }
+});
+
+// Find tasks taught in October
+db.tasks.find({
+  date: {
+    $gte: new ISODate("2020-10-01T00:00:00Z"),
+    $lt: new ISODate("2020-11-01T00:00:00Z")
+  }
+});
+
+
+2. Find All Company Drives Between 15 Oct 2020 and 31 Oct 2020:
+
+db.company_drives.find({
+  drive_date: {
+    $gte: new ISODate("2020-10-15T00:00:00Z"),
+    $lte: new ISODate("2020-10-31T23:59:59Z")
+  }
+});
+
+
+3. Find All Company Drives and Students Who Appeared for the Placement:
+
+db.students.aggregate([
+  {
+    $lookup: {
+      from: "company_drives",
+      localField: "appeared_for_drives",
+      foreignField: "drive_id",
+      as: "attended_drives"
+    }
+  },
+  { $unwind: "$attended_drives" },
+  {
+    $project: {
+      student_name: 1,
+      drive_name: "$attended_drives.company_name",
+      drive_date: "$attended_drives.drive_date"
+    }
+  }
+]);
+
+
+4. Find the Number of Problems Solved by the User in Codekata:
+
+db.codekata.aggregate([
+  { $match: { user_id: "user_id_here" } },  // Replace with actual user_id
+  { $group: { _id: "$user_id", problems_solved: { $sum: 1 } } }
+]);
+
+
+5. Find All Mentors Who Have More Than 15 Mentees:
+
+db.mentors.find({ mentee_count: { $gt: 15 } });
+
+
+6. Find the Number of Users Who Are Absent and Task is 
+Not Submitted Between 15 Oct 2020 and 31 Oct 2020:
+
+db.attendance.aggregate([
+  {
+    $match: {
+      date: {
+        $gte: new ISODate("2020-10-15T00:00:00Z"),
+        $lte: new ISODate("2020-10-31T23:59:59Z")
+      },
+      status: "absent"
+    }
+  },
+  {
+    $lookup: {
+      from: "task_submission",
+      localField: "user_id",
+      foreignField: "user_id",
+      as: "task_info"
+    }
+  },
+  {
+    $match: {
+      "task_info.task_status": { $ne: "submitted" }
+    }
+  },
+  {
+    $group: {
+      _id: "$user_id",
+      count: { $sum: 1 }
+    }
+  }
+]);
+
+
+
+
+Query Read Me:
+
+1.This query retrieves all topics and tasks that were taught in the month of October 2020.
+
+2.This query retrieves all company drives that occurred between October 15, 2020 and October 31, 2020.
+
+3.This query returns students who appeared for company drives. It joins the students collection with the company_drives collection.
+
+4.This query counts the number of problems solved by a specific user on the Codekata platform.
+
+5.This query finds all mentors who have more than 15 mentees.
+
+6.This query retrieves the number of users who were absent and did not submit their tasks between October 15, 2020 and October 31, 2020.
